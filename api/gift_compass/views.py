@@ -31,22 +31,22 @@ class PageListView(APIView):
     def get(self, request, format=None):
 
         pages = Page.objects.filter(owner=request.auth['user_id'])
-        page_infos = []
-        for page in pages:
-            page_info = {
-                'uuid': page.uuid,
-                'title': page.title,
-                'published': page.published,
-            }
-            page_infos.append(page_info)
+        #page_infos = []
+        #for page in pages:
+        #    page_info = {
+        #        'uuid': page.uuid,
+        #        'title': page.title,
+        #        'published': page.published,
+        #    }
+        #    page_infos.append(page_info)
 
-        serializer = PageListSerializer(page_infos, many=True)
+        serializer = PageListSerializer(pages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class PageDetailView(APIView):
 
     authentication_classes = [CustomJWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = []#IsAuthenticated]
 
     def get(self, request, page_id):
 

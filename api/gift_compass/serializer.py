@@ -9,7 +9,7 @@ class TestSerializer(serializers.ModelSerializer):
 class PageListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ('uuid', 'title', 'published')
+        fields = ['uuid', 'title', 'published']
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,5 +28,5 @@ class PageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Page
-        fields = ['uuid', 'contents']
+        fields = ['uuid', 'title', 'template_id', 'contents']
 

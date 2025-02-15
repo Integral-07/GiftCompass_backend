@@ -1,12 +1,13 @@
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, views, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .serializer import TestSerializer
-from .models import Test
+from .serializer import TestSerializer, PageListSerializer, PageSerializer
+from .models import Test, Page
 from .authentication import CustomJWTAuthentication
 
 class TestView(APIView):
@@ -21,6 +22,39 @@ class TestView(APIView):
         serializer = TestSerializer(queryset, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
     
+
+class PageListView(APIView):
+
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+
+        pages = Page.objects.filter(owner=request.auth['user_id'])
+        page_infos = []
+        for page in pages:
+            page_info = {
+                'uuid': page.uuid,
+                'title': page.title,
+                'published': page.published,
+            }
+            page_infos.append(page_info)
+
+        serializer = PageListSerializer(page_infos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class PageDetailView(APIView):
+
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, page_id):
+
+        page = get_object_or_404(Page, uuid=page_id)
+        serializer = PageSerializer(page)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class LoginView(APIView):
     """

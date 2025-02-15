@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .serializer import TestSerializer, PageListSerializer, PageSerializer
-from .models import Test, Page
+from .serializer import TestSerializer, PageListSerializer, PageSerializer, AnswerSerializer
+from .models import Test, Page, Choice, Content
 from .authentication import CustomJWTAuthentication
 
 class TestView(APIView):
@@ -21,24 +21,75 @@ class TestView(APIView):
         queryset = Test.objects.all()
         serializer = TestSerializer(queryset, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
-    
+
+class SavePageView(APIView):
+
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, page_id):
+        try:
+            page = Page.objects.get(uuid=page_id)  # UUIDを使用してページを取得
+        except Page.DoesNotExist:
+            return Response({"error": "ページが見つかりません"}, status=status.HTTP_404_NOT_FOUND)
+
+        # 既存のContentとChoiceを削除
+        page.contents.all().delete()
+
+        # 新しいContentとChoiceを保存
+        data = request.data
+        contents_data = data.pop('contents', [])
+        page.title = data.get('title', page.title)
+        page.template_id = data.get('template_id', page.template_id)
+        page.save()
+        
+        i = 1
+        for content_data in contents_data:
+            choices_data = content_data.pop('choices', [])
+            content = Content.objects.create(owner=page, number=i, **content_data)
+            i += 1
+            j = 1
+            for choice_data in choices_data:
+                Choice.objects.create(owner=content, number=j, **choice_data)
+                j += 1
+
+        # 更新されたPageのデータをシリアライズして返す
+        serializer = PageSerializer(page)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class AnswerPageView(APIView):
+
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, page_id):
+
+        page = get_object_or_404(Page, uuid=page_id)
+        serializer = PageSerializer(page)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+    def post(self, request, page_id):
+
+        serializer = AnswerSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class PageListView(APIView):
 
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, format=None):
+    def get(self, request):
 
         pages = Page.objects.filter(owner=request.auth['user_id'])
-        #page_infos = []
-        #for page in pages:
-        #    page_info = {
-        #        'uuid': page.uuid,
-        #        'title': page.title,
-        #        'published': page.published,
-        #    }
-        #    page_infos.append(page_info)
 
         serializer = PageListSerializer(pages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -46,7 +97,7 @@ class PageListView(APIView):
 class PageDetailView(APIView):
 
     authentication_classes = [CustomJWTAuthentication]
-    permission_classes = []#IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, page_id):
 

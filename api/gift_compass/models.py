@@ -34,11 +34,15 @@ class Choice(models.Model):
     number = models.IntegerField()
     text = models.CharField(max_length=200)
 
-class Respondent(models.Model):
-
-    name = models.CharField(max_length=100, default="anony") #回答者の識別のため
-
 
 class Answer(models.Model):
 
-    owner = models.ForeignKey(Page, on_delete=models.CASCADE)
+    owner = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='answer')
+    respondent_name = models.CharField(max_length=100, default="anony")
+
+
+class SelectedChoice(models.Model):
+
+    owner = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name="selected_choice")
+    order = models.IntegerField(default=0)
+    value = models.IntegerField(default=0)

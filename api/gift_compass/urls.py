@@ -11,5 +11,7 @@ urlpatterns = [
     path("logout/", views.LogoutView.as_view()),
     path("page_list/", views.PageListView.as_view()),
     path("page_view/<page_id>/", views.PageDetailView.as_view()),
+    path("page_save/<page_id>/", views.SavePageView().as_view()),
+    path("page_answer/<page_id>/", views.AnswerPageView.as_view()),
     path("test/", views.TestView.as_view()),
 ]

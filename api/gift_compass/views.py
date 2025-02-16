@@ -7,7 +7,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .serializer import TestSerializer, PageListSerializer, PageSerializer, AnswerSerializer
-from .models import Test, Page, Choice, Content
+from .models import Test, Page, Choice, Content, Answer, SelectedChoice
 from .authentication import CustomJWTAuthentication
 
 class TestView(APIView):
@@ -62,7 +62,7 @@ class SavePageView(APIView):
 class AnswerPageView(APIView):
 
     authentication_classes = [CustomJWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     def get(self, request, page_id):
 
@@ -72,13 +72,25 @@ class AnswerPageView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-    def post(self, request, page_id):
-
+    def post(self, request, *args, **kwargs):
         serializer = AnswerSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class AnswerPreview(APIView):
+
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, page_id):
+
+        page = get_object_or_404(Answer, owner=get_object_or_404(Page, uuid=page_id))
+        serializer = AnswerSerializer(page)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

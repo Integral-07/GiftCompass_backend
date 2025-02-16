@@ -18,6 +18,14 @@ class AnswerSerializer(serializers.ModelSerializer):
         model = Answer
         fields = ['owner', 'respondent_name', 'selected_choice']
 
+    def create(self, validated_data):
+        selected_choices_data = validated_data.pop('selected_choice')
+        respondent_name = validated_data.pop('respondent_name')
+        answer = Answer.objects.create(respondent_name=respondent_name, **validated_data)
+        for choice_data in selected_choices_data:
+            SelectedChoice.objects.create(owner=answer, **choice_data)
+        return answer
+
 class PageListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
